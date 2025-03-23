@@ -1,0 +1,70 @@
+name: Process CSV Upload
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  process-csv:
+    runs-on: ubuntu-latest
+    # Issueのタイトルが「CSV Update:」で始まる場合のみ実行
+    if: startsWith(github.event.issue.title, 'CSV Update:')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Extract CSV data
+        id: extract-csv
+        run: |
+          # Issueの本文からBase64エンコードされたCSVデータを抽出
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          # コードブロック内のデータを抽出
+          CSV_BASE64=$(echo "$ISSUE_BODY" | grep -v '```' | tr -d '\n')
+
+          # Base64デコード
+          echo "$CSV_BASE64" | base64 --decode > data.csv
+
+          # データが正常に抽出されたか確認
+          if [ ! -s data.csv ]; then
+            echo "::error::CSVデータの抽出に失敗しました"
+            exit 1
+          fi
+
+          echo "::set-output name=csv_extracted::true"
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 変更があるか確認
+          if git diff --quiet data.csv; then
+            echo "変更はありません"
+          else
+            git add data.csv
+            git commit -m "Update CSV data via GitHub Actions"
+            git push
+          fi
+
+      - name: Generate history page
+        run: |
+          # 更新履歴ページの生成（オプション）
+          # 現在は実装していませんが、将来的に追加することができます
+          echo "更新履歴ページの生成をスキップしました"
+
+      - name: Close Issue
+        uses: peter-evans/close-issue@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment: "CSVデータの処理が完了しました。更新履歴ページで確認できます。"
