@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import type { UpdateHistory } from '@/types'
+import type { UpdateHistory } from '../types'
 
 // GitHub設定
 // 環境変数から取得するか、デフォルト値を使用

@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import Papa from 'papaparse'
-import type { CSVRow } from '@/types'
+import type { CSVRow } from '../types'
 
 // 状態管理
 const isDragging = ref(false)
